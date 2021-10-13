@@ -16,7 +16,6 @@ namespace MarketRace.Entity
        public string CORREO { get; set; }
        public string CLAVE { get; set; }
        public int ID_RO { get; set; }
-       public int ID_ES { get; set; }
        public string IMAGEN { get; set; }
     }
 }
