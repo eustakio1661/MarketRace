@@ -7,5 +7,9 @@ namespace MarketRace.Entity
 {
     public class Categoria
     {
+        public int  ID_CA { get; set; }
+        public string DESCRIPCION { get; set; }
+        public string IMAGEN { get; set; }
+      
     }
 }
