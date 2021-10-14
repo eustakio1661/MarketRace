@@ -17,7 +17,7 @@ CREATE TABLE ROLES(
   
 
 CREATE TABLE USUARIOS(
-  ID_US      INT          PRIMARY KEY, 
+  ID_US      INT          PRIMARY KEY identity(1,1), 
   DNI   CHAR(8)      NOT NULL UNIQUE,
   NOMBRE    VARCHAR(50)  NOT NULL,
   APELLIDO    VARCHAR(50)  NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE USUARIOS(
   DIRECCION VARCHAR(150) NOT NULL,
   CORREO VARCHAR(100) NOT NULL UNIQUE,
   CLAVE  VARCHAR(50)  NOT NULL UNIQUE,
-  ID_RO	 	  INT		  NOT NULL,
+  ID_RO	 	  INT		  NOT NULL DEFAULT 1,
   IMAGEN 	VARCHAR(1000) NOT NULL DEFAULT 'https://res.cloudinary.com/dfuuywyk9/image/upload/v1621437436/l60Hf_megote.png',
   FOREIGN KEY (ID_RO) REFERENCES ROLES (ID_RO)
 )
@@ -93,7 +93,7 @@ CREATE TABLE COMPROBANTES
     ID_CO          INT 	   NOT NULL identity(1,1),
     ID_US         INT     NOT NULL,
     FECHA_PE       DATE    NOT NULL,
-    CANTIDAD_TOTAL TINYINT NOT NULL CHECK (CANTIDAD_TOTAL >= 0),
+    CANTIDAD_TOTAL TINYINT NOT NULL CHECK (CANTIDAD_TOTAL >0),
     DESCUENTO  DECIMAL(6,2) NOT NULL,
     PRETOTAL DECIMAL(6,2) NOT NULL,
     ID_ES		   TINYINT NOT NULL ,
@@ -120,6 +120,10 @@ go
 
 
 
+INSERT INTO ROLES(DESCRIPCION) VALUES('CLIENTE');
+INSERT INTO ROLES(DESCRIPCION) VALUES('ADMINISTRADOR');
+INSERT INTO ROLES(DESCRIPCION) VALUES('ASISTENTE DE VENTA');
+GO
 
 INSERT INTO DISTRITOS(NOM) VALUES ('LIMA');
 INSERT INTO DISTRITOS(NOM) VALUES ('ANCON');
@@ -168,72 +172,220 @@ go
 
 
 /*Procedimiento Almacenado de Usuarios*/
-create proc usp_listadoUsuario
+create or alter proc usp_listadoUsuario
 as
 begin
-  select  ID_US, DNI , NOMBRE ,APELLIDO,TELEFONO,
-  DIRECCION,CORREO, CLAVE,ID_RO,ID_ES 
-  from USUARIOS
+  select u.ID_US,u.DNI,u.NOMBRE,u.APELLIDO,u.TELEFONO,u.DIRECCION,r.DESCRIPCION
+  from USUARIOS as u
+  inner join ROLES as r
+  on u.ID_RO = r.ID_RO
 end 
 go
 
-/--------------------------------------/
-
-
-create proc Lista_MARCAS
+create or alter proc usp_agregarUsuario
+  @DNI   CHAR(8),
+  @NOMBRE    VARCHAR(50),
+  @APELLIDO    VARCHAR(50),
+  @TELEFONO  VARCHAR(10),
+  @DIRECCION VARCHAR(150),
+  @CORREO VARCHAR(100),
+  @CLAVE  VARCHAR(50)
 as
 begin
-  select ID_MA, DESCRIPCION 
+	insert into USUARIOS(DNI,NOMBRE,APELLIDO,TELEFONO,DIRECCION,CORREO,CLAVE) values(@DNI,@NOMBRE,@APELLIDO,@TELEFONO,@DIRECCION,@CORREO,@CLAVE)
+end 
+go
+
+create or alter proc usp_actualizarUsuario
+  @ID_US INT,
+  @DNI   CHAR(8),
+  @NOMBRE    VARCHAR(50),
+  @APELLIDO    VARCHAR(50),
+  @TELEFONO  VARCHAR(10),
+  @DIRECCION VARCHAR(150),
+  @CORREO VARCHAR(100),
+  @IMG VARCHAR(100),
+  @CLAVE  VARCHAR(50)
+as
+begin
+	update USUARIOS set DNI=@DNI,NOMBRE=@NOMBRE,APELLIDO=@APELLIDO,TELEFONO=@TELEFONO,DIRECCION=@DIRECCION,CORREO=@CORREO,CLAVE=@CLAVE,IMAGEN=@IMG where ID_US=@ID_US
+end 
+go
+
+select * from USUARIOS
+exec usp_listadoUsuario
+exec usp_agregarUsuario '72571636','DIEGO','GUTARRA','943447957','Mz. H lt.4','diegogutarra@gmail.com','kjenwenfwenfiwe'
+exec usp_actualizarUsuario 1,'72571636','DIEGO','GUTARRA','943447957','Mz. H lt.4','diegogutarra@gmail.com','kjenwenfwenfiwe','fewefwefewfwe'
+go
+/*--------------------------------------*/
+
+/*Procedimiento Almacenado de Marcas*/
+create or alter proc usp_listadoMarcas
+as
+begin
+  select *
     from MARCAS
 end 
 go
 
-create proc Lista_CATEGORIAS
+create or alter proc usp_agregarMarcas
+
+ 
+   @DESCRIPCION VARCHAR(30),
+    @IMAGEN 	VARCHAR(1000)
 as
 begin
-  select ID_CA ,DESCRIPCION
-  from CATEGORIAS
+  insert into MARCAS(DESCRIPCION,IMAGEN) values(@DESCRIPCION,@IMAGEN)
 end 
 go
 
-create proc Lista_REPUESTOS
+
+create or alter proc usp_actualizarMarcas
+@ID_MA       INT,
+@DESCRIPCION VARCHAR(30) ,
+  @IMAGEN 	VARCHAR(1000)
 as
 begin
-  select ID_RE,SKU,TITULO,DESCRIPCION, PRECIO,CANTIDAD,
-ID_MA,ID_CA,ID_ES  
-from REPUESTOS
+  update MARCAS set DESCRIPCION=@DESCRIPCION,IMAGEN=@IMAGEN where ID_MA=@ID_MA
 end 
 go
 
-create proc Lista_DISTRITOS
+/*--------------------------------------*/
+
+/*Procedimiento Almacenado de Categoria*/
+create or alter proc usp_listadoCategoria
 as
 begin
-  select ID_DI,NOM
+  select *
+    from CATEGORIAS
+end 
+go
+
+create or alter proc usp_agregarCategoria
+
+ @DESCRIPCION VARCHAR(30) ,
+  @IMAGEN 	VARCHAR(1000)
+as
+begin
+  insert into CATEGORIAS(DESCRIPCION,IMAGEN) values(@DESCRIPCION,@IMAGEN)
+end 
+go
+
+
+create or alter proc usp_actualizarCategoria
+@ID_CA       INT,
+@DESCRIPCION VARCHAR(30) ,
+  @IMAGEN 	VARCHAR(1000)
+as
+begin
+  update CATEGORIAS set DESCRIPCION=@DESCRIPCION,IMAGEN=@IMAGEN where ID_CA=@ID_CA
+end 
+go
+
+/*--------------------------------------*/
+
+/*Procedimiento Almacenado de Distrito*/
+create or alter proc usp_listadoDistritos
+as
+begin
+ select ID_DI,NOM
     from DISTRITOS
 end 
 go
 
-create proc Lista_DIRECCION_ENVIOS
+/*--------------------------------------*/
+
+/*Procedimiento Almacenado de Direccion de Envio*/
+create or alter proc usp_listadoDireccion
 as
 begin
-  select ID_EN,DIRECCION,REFERENCIA,ID_DI
+ select *
     from DIRECCION_ENVIOS
 end 
 go
 
-create proc Lista_ESTADO_COMPROBANTES
+create or alter proc usp_agregarDireccion
+@DIRECCION VARCHAR(100),
+@REFERENCIA VARCHAR(100),
+@ID_DI INT
 as
 begin
-  select ID_ES,DESCRIPCION
-    from ESTADO_COMPROBANTES
+  insert into DIRECCION_ENVIOS(DIRECCION,REFERENCIA,ID_DI) values(@DIRECCION,@REFERENCIA,@ID_DI)
 end 
 go
 
-create proc Lista_COMPROBANTES
+
+create or alter proc usp_actualizarDireccion
+@ID_EN       INT,
+@DIRECCION VARCHAR(100),
+@REFERENCIA VARCHAR(100),
+@ID_DI INT
 as
 begin
-  select ID_CO, ID_US,FECHA_PE,CANTIDAD_TOTAL,
-    DESCUENTO, PRETOTAL,ID_ES,ID_EN	
-    from COMPROBANTES
+  update DIRECCION_ENVIOS set  DIRECCION=@DIRECCION,REFERENCIA=@REFERENCIA,ID_DI=@ID_DI where ID_EN = @ID_EN
+end 
+go
+
+/*--------------------------------------*/
+
+create or alter proc usp_listadoRepuesto
+as
+begin
+  select r.ID_RE,r.SKU,r.TITULO,r.DESCRIPCION,r.PRECIO,r.CANTIDAD,r.IMAGEN,m.DESCRIPCION,c.DESCRIPCION  from REPUESTOS as r
+  inner join MARCAS as m
+  on r.ID_MA = m.ID_MA
+  inner join CATEGORIAS as c
+  on r.ID_CA = c.ID_CA
+end 
+go
+
+create or alter proc usp_listadoRepuestoActivos
+as
+begin
+  select r.ID_RE,r.SKU,r.TITULO,r.DESCRIPCION,r.PRECIO,r.CANTIDAD,r.IMAGEN,m.DESCRIPCION,c.DESCRIPCION  from REPUESTOS as r
+  inner join MARCAS as m
+  on r.ID_MA = m.ID_MA
+  inner join CATEGORIAS as c
+  on r.ID_CA = c.ID_CA
+  where r.ESTADO=1
+end 
+go
+
+create or alter proc usp_agregarRepuesto
+    @SKU			VARCHAR(30)	,
+    @TITULO VARCHAR(100),
+    @DESCRIPCION VARCHAR(100),
+    @PRECIO      DECIMAL(6, 2) ,
+    @CANTIDAD    TINYINT ,
+    @ID_MA       INT,
+    @ID_CA       INT
+as
+begin
+	insert into REPUESTOS(SKU,TITULO,DESCRIPCION,PRECIO,CANTIDAD,ID_MA,ID_CA) values(@SKU,@TITULO,@DESCRIPCION,@PRECIO,@CANTIDAD,@ID_MA,@ID_CA)
+end 
+go
+
+create or alter proc usp_actualizarRepuesto
+	@ID_RE      INT, 
+	@SKU			VARCHAR(30)	,
+    @TITULO VARCHAR(100),
+    @DESCRIPCION VARCHAR(100),
+    @PRECIO      DECIMAL(6, 2) ,
+    @CANTIDAD    TINYINT ,
+	@IMAGEN 	VARCHAR(1000),
+    @ID_MA       INT,
+    @ID_CA       INT
+as
+begin
+	update REPUESTOS set SKU=@SKU,TITULO=@TITULO,DESCRIPCION=@DESCRIPCION,PRECIO=@PRECIO,CANTIDAD=@CANTIDAD,IMAGEN=@IMAGEN,ID_MA=@ID_MA,ID_CA=@ID_CA where ID_RE=@ID_RE
+end 
+go
+
+
+create or alter proc usp_desactivarRepuesto
+	@ID_RE      INT
+as
+begin
+	update REPUESTOS set ESTADO=0 where ID_RE=@ID_RE
 end 
 go
